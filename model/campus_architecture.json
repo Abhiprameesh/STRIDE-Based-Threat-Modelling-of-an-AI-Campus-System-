@@ -1,0 +1,403 @@
+{
+  "metadata": {
+    "project_title": "STRIDE-Based Threat Modelling of an AI Campus System",
+    "course": "Data Security and Privacy",
+    "project_type": "Academic Threat-Modeling Micro-Project",
+    "version": "1.0.0",
+    "date": "2026-10-05",
+    "official_objective": "Identify threats using STRIDE and recommend controls",
+    "dataset": "Synthetic campus architecture",
+    "modeling_methodology": "STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege)",
+    "risk_formula": "Risk = Likelihood x Impact (3x3 Matrix)",
+    "disclaimer": "This is an academic threat-modeling project, NOT a real campus application. It uses a purely synthetic campus architecture and does NOT model the real Dayananda Sagar College of Engineering. No real student data, credentials, or live systems are used or attacked."
+  },
+  "external_entities": [
+    {
+      "id": "E1",
+      "name": "Student",
+      "description": "Enrolled undergraduate or postgraduate student accessing academic services, schedules, attendance, and the campus AI assistant.",
+      "trust_boundary": "TB1"
+    },
+    {
+      "id": "E2",
+      "name": "Faculty",
+      "description": "Academic teaching and research staff posting grades, recording daily attendance, managing course modules, and advising students.",
+      "trust_boundary": "TB1"
+    },
+    {
+      "id": "E3",
+      "name": "Campus Administrator",
+      "description": "Privileged IT and academic office staff managing user provisioning, role assignments, system configurations, and security audits.",
+      "trust_boundary": "TB1"
+    }
+  ],
+  "external_services": [
+    {
+      "id": "E4",
+      "name": "External Cloud AI/LLM Service",
+      "description": "Third-party commercial generative AI API providing high-parameter foundational language model inference via HTTPS.",
+      "trust_boundary": "TB4"
+    }
+  ],
+  "processes": [
+    {
+      "id": "P1",
+      "name": "Student Mobile/Web Application",
+      "type": "Client Application",
+      "description": "Client-side frontend rendering student dashboards, dispatching credentials, and submitting queries.",
+      "trust_boundary": "TB1"
+    },
+    {
+      "id": "P2",
+      "name": "Faculty Web Portal",
+      "type": "Client Application",
+      "description": "Web-based faculty management portal handling grade submissions, attendance rosters, and class communications.",
+      "trust_boundary": "TB1"
+    },
+    {
+      "id": "P3",
+      "name": "Administrator Portal",
+      "type": "Client Application",
+      "description": "High-privilege web console for campus configuration, identity lifecycle management, and security telemetry review.",
+      "trust_boundary": "TB1"
+    },
+    {
+      "id": "P4",
+      "name": "API Gateway",
+      "type": "Core Service",
+      "description": "Central campus ingress controller: terminates TLS, performs initial request validation, token verification, rate limiting, and route routing.",
+      "trust_boundary": "TB2"
+    },
+    {
+      "id": "P5",
+      "name": "Authentication and Authorization Service",
+      "type": "Core Service",
+      "description": "Identity provider verifying credentials, issuing signed tokens (JWT), evaluating RBAC permissions, and managing session state.",
+      "trust_boundary": "TB2"
+    },
+    {
+      "id": "P6",
+      "name": "Campus AI Assistant",
+      "type": "Core Service",
+      "description": "Conversational agent orchestrating campus query handling, prompt sanitization, RAG context assembly, and external LLM dispatch.",
+      "trust_boundary": "TB2"
+    },
+    {
+      "id": "P7",
+      "name": "Student Analytics Service",
+      "type": "Core Service",
+      "description": "Batch and stream processing engine computing student academic risk metrics, engagement trends, and GPA forecasts.",
+      "trust_boundary": "TB2"
+    },
+    {
+      "id": "P8",
+      "name": "Recommendation Service",
+      "type": "Core Service",
+      "description": "Machine-learning-based suggestion engine generating personalized elective options, remedial interventions, and academic resources.",
+      "trust_boundary": "TB2"
+    }
+  ],
+  "data_stores": [
+    {
+      "id": "D1",
+      "name": "Student Information Database",
+      "description": "Student PII, residential addresses, contact numbers, guardian details, enrollment status, financial payment flags.",
+      "sensitivity": "High (Confidential)",
+      "trust_boundary": "TB3"
+    },
+    {
+      "id": "D2",
+      "name": "Academic and Attendance Database",
+      "description": "Official course marks, GPA/CGPA calculations, semester transcript history, biometric attendance rosters.",
+      "sensitivity": "Critical (Integrity-Critical)",
+      "trust_boundary": "TB3"
+    },
+    {
+      "id": "D3",
+      "name": "AI Conversation and Application Logs",
+      "description": "Historical user prompt dialogues, AI completion outputs, token usage statistics, session context tokens.",
+      "sensitivity": "Medium-High (Privacy-Sensitive)",
+      "trust_boundary": "TB3"
+    },
+    {
+      "id": "D4",
+      "name": "Security Audit Logs",
+      "description": "Append-only security event trail: failed auth attempts, role escalations, administrative actions, and gateway access records.",
+      "sensitivity": "Critical (Non-Repudiation)",
+      "trust_boundary": "TB3"
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "id": "TB1",
+      "name": "Public/External User Zone",
+      "description": "Separates unauthenticated end users (E1, E2, E3) and their personal client devices/browsers (P1, P2, P3) from the campus network. Carried over public untrusted internet and cellular networks.",
+      "enclosed_elements": ["E1", "E2", "E3", "P1", "P2", "P3"]
+    },
+    {
+      "id": "TB2",
+      "name": "Campus Application Zone",
+      "description": "Encapsulates the private campus microservices subnet hosting P4, P5, P6, P7, and P8. Shielded behind reverse proxies and perimeter firewalls.",
+      "enclosed_elements": ["P4", "P5", "P6", "P7", "P8"]
+    },
+    {
+      "id": "TB3",
+      "name": "Protected Data Zone",
+      "description": "High-security internal enclave containing persistence databases (D1–D4). Isolated via internal database firewalls, requiring mutual authentication and least-privilege service accounts.",
+      "enclosed_elements": ["D1", "D2", "D3", "D4"]
+    },
+    {
+      "id": "TB4",
+      "name": "External AI Service Boundary",
+      "description": "Demarcates the perimeter between the campus internal infrastructure (P6) and the third-party cloud provider (E4). Transits public WAN egress requiring rigorous egress data sanitization.",
+      "enclosed_elements": ["E4"]
+    }
+  ],
+  "data_flows": [
+    {
+      "id": "F01",
+      "source": "E1",
+      "source_name": "Student",
+      "destination": "P1",
+      "destination_name": "Student Mobile/Web Application",
+      "payload": "Student credentials, requests, AI queries",
+      "crossed_boundary": "None (Within TB1)"
+    },
+    {
+      "id": "F02",
+      "source": "E2",
+      "source_name": "Faculty",
+      "destination": "P2",
+      "destination_name": "Faculty Web Portal",
+      "payload": "Faculty credentials, academic requests",
+      "crossed_boundary": "None (Within TB1)"
+    },
+    {
+      "id": "F03",
+      "source": "E3",
+      "source_name": "Campus Administrator",
+      "destination": "P3",
+      "destination_name": "Administrator Portal",
+      "payload": "Administrative credentials and management requests",
+      "crossed_boundary": "None (Within TB1)"
+    },
+    {
+      "id": "F04",
+      "source": "P1",
+      "source_name": "Student Mobile/Web Application",
+      "destination": "P4",
+      "destination_name": "API Gateway",
+      "payload": "Student API requests",
+      "crossed_boundary": "TB1 -> TB2"
+    },
+    {
+      "id": "F05",
+      "source": "P2",
+      "source_name": "Faculty Web Portal",
+      "destination": "P4",
+      "destination_name": "API Gateway",
+      "payload": "Faculty API requests",
+      "crossed_boundary": "TB1 -> TB2"
+    },
+    {
+      "id": "F06",
+      "source": "P3",
+      "source_name": "Administrator Portal",
+      "destination": "P4",
+      "destination_name": "API Gateway",
+      "payload": "Administrative API requests",
+      "crossed_boundary": "TB1 -> TB2"
+    },
+    {
+      "id": "F07",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "P5",
+      "destination_name": "Authentication and Authorization Service",
+      "payload": "Authentication and authorization requests",
+      "crossed_boundary": "None (Within TB2)"
+    },
+    {
+      "id": "F08",
+      "source": "P5",
+      "source_name": "Authentication and Authorization Service",
+      "destination": "P4",
+      "destination_name": "API Gateway",
+      "payload": "Authentication result and authorization token/session",
+      "crossed_boundary": "None (Within TB2)"
+    },
+    {
+      "id": "F09",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "D1",
+      "destination_name": "Student Information Database",
+      "payload": "Student information queries/updates",
+      "crossed_boundary": "TB2 -> TB3"
+    },
+    {
+      "id": "F10",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "D2",
+      "destination_name": "Academic and Attendance Database",
+      "payload": "Academic and attendance queries/updates",
+      "crossed_boundary": "TB2 -> TB3"
+    },
+    {
+      "id": "F11",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "P6",
+      "destination_name": "Campus AI Assistant",
+      "payload": "Student/faculty AI requests",
+      "crossed_boundary": "None (Within TB2)"
+    },
+    {
+      "id": "F12",
+      "source": "P6",
+      "source_name": "Campus AI Assistant",
+      "destination": "E4",
+      "destination_name": "External Cloud AI/LLM Service",
+      "payload": "AI prompt/context",
+      "crossed_boundary": "TB2 -> TB4"
+    },
+    {
+      "id": "F13",
+      "source": "E4",
+      "source_name": "External Cloud AI/LLM Service",
+      "destination": "P6",
+      "destination_name": "Campus AI Assistant",
+      "payload": "AI-generated response",
+      "crossed_boundary": "TB4 -> TB2"
+    },
+    {
+      "id": "F14",
+      "source": "P6",
+      "source_name": "Campus AI Assistant",
+      "destination": "D3",
+      "destination_name": "AI Conversation and Application Logs",
+      "payload": "AI interaction metadata/logs",
+      "crossed_boundary": "TB2 -> TB3"
+    },
+    {
+      "id": "F15",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "P7",
+      "destination_name": "Student Analytics Service",
+      "payload": "Student activity/academic data",
+      "crossed_boundary": "None (Within TB2)"
+    },
+    {
+      "id": "F16",
+      "source": "P7",
+      "source_name": "Student Analytics Service",
+      "destination": "D1",
+      "destination_name": "Student Information Database",
+      "payload": "Analytics-related student data retrieval",
+      "crossed_boundary": "TB2 -> TB3"
+    },
+    {
+      "id": "F17",
+      "source": "P7",
+      "source_name": "Student Analytics Service",
+      "destination": "P8",
+      "destination_name": "Recommendation Service",
+      "payload": "Analytics results/features",
+      "crossed_boundary": "None (Within TB2)"
+    },
+    {
+      "id": "F18",
+      "source": "P8",
+      "source_name": "Recommendation Service",
+      "destination": "P4",
+      "destination_name": "API Gateway",
+      "payload": "Personalized recommendations",
+      "crossed_boundary": "None (Within TB2)"
+    },
+    {
+      "id": "F19",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "D4",
+      "destination_name": "Security Audit Logs",
+      "payload": "API/security events",
+      "crossed_boundary": "TB2 -> TB3"
+    },
+    {
+      "id": "F20",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "P1",
+      "destination_name": "Student Mobile/Web Application",
+      "payload": "API response/data",
+      "crossed_boundary": "TB2 -> TB1"
+    },
+    {
+      "id": "F21",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "P2",
+      "destination_name": "Faculty Web Portal",
+      "payload": "API response/data",
+      "crossed_boundary": "TB2 -> TB1"
+    },
+    {
+      "id": "F22",
+      "source": "P4",
+      "source_name": "API Gateway",
+      "destination": "P3",
+      "destination_name": "Administrator Portal",
+      "payload": "API response/data",
+      "crossed_boundary": "TB2 -> TB1"
+    }
+  ],
+  "assumptions": [
+    "1. The campus architecture is synthetic.",
+    "2. Users access the system through web/mobile interfaces.",
+    "3. The public internet is considered untrusted.",
+    "4. Campus backend services are trusted only within their defined security boundaries.",
+    "5. Databases contain sensitive synthetic student and academic information.",
+    "6. Authentication is handled by a dedicated authentication service.",
+    "7. Authorization is enforced by backend services.",
+    "8. Communication across untrusted networks should use encrypted channels.",
+    "9. The external cloud AI/LLM service is outside the campus trust boundary.",
+    "10. Security audit logs are intended to support accountability.",
+    "11. No real student information is used.",
+    "12. No actual attack is performed."
+  ],
+  "scope": {
+    "in_scope": [
+      "Student access",
+      "Faculty access",
+      "Administrator access",
+      "Authentication",
+      "Authorization",
+      "API Gateway",
+      "AI Assistant",
+      "Analytics",
+      "Recommendation service",
+      "Student information",
+      "Academic and attendance data",
+      "AI interaction logs",
+      "Security audit logs",
+      "External AI/LLM communication",
+      "Data flows",
+      "Trust boundaries"
+    ],
+    "out_of_scope": [
+      "Physical campus security",
+      "CCTV security",
+      "Building access control",
+      "Electrical infrastructure",
+      "Real network penetration testing",
+      "Real student data",
+      "Real cloud deployment",
+      "Actual exploitation",
+      "Malware development",
+      "Wireless attacks",
+      "Hardware attacks"
+    ]
+  }
+}
